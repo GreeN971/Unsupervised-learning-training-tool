@@ -1,0 +1,19 @@
+# GUI (Material-style widgets, native OS window via pywebview)
+nicegui[native]>=3.16
+
+# Native window backend for Linux only - pywebview uses the OS's built-in
+# webview on Windows (WebView2) and macOS (WKWebView), no extra package
+# needed there. On Linux it needs either system GTK+WebKit2 bindings (which,
+# awkwardly, are tied to the OS's *default* Python - not necessarily the
+# 3.10-3.13 interpreter this app needs for TensorFlow) or Qt, which pip can
+# install self-contained into this venv regardless of Python version. Qt is
+# more reliable here, at the cost of a larger download on Linux.
+qtpy>=2.4; sys_platform == "linux"
+PySide6>=6.7; sys_platform == "linux"
+
+# ML pipeline (same libraries the notebooks in algorithms/ use)
+tensorflow>=2.21
+torch>=2.13
+pyod>=2.0
+scikit-learn>=1.5
+pandas>=2.2

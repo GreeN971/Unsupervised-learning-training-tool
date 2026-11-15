@@ -1,0 +1,9 @@
+.claude
+.venv
+datasets/
+
+# Python bytecode caches (any depth, including inside algorithms/)
+__pycache__/
+*.py[cod]
+
+INT8_SIZE_ESTIMATION.md

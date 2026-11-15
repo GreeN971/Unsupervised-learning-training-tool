@@ -1,0 +1,5 @@
+id,Detector,model_type,MAC,architecture,quantization,width,n_blocks,hidden_factor,layers,size,testing result
+1,IForest,sequential,512,mlp,none,,,,"16,8",,
+3,Iforest,sequential,512,mlp,int8,,,,"16,8",,
+4,Iforest,functional,512,residual,none,16,2,1,,,
+6,Iforest,functional,512,residual,int8,16,2,1,,,
