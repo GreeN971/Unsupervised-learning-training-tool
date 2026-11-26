@@ -1,0 +1,152 @@
+
+=== Popisná statistika ===
+období: 01. 07. 02:00 – 01. 08. 01:50 (místní čas), krok = 0 days 00:10:00, chybějících časů = 0, nepravidelných kroků = 0
+n = 4464, chybějící = 0, unikátních = 240
+průměr = 17.47, směr. odchylka = 4.50
+min = 9.3 (11. 07. 05:20), max = 34.1 (02. 07. 16:10), rozpětí = 24.8
+kvantily: P1=11.3, P5=12.0, P25=14.3, P50=16.4, P75=19.6, P95=26.9, P99=31.8
+šikmost = 1.192, špičatost (exces) = 1.347
+úplných místních dní = 30
+denní amplituda: průměr = 10.0, min = 1.8 (28. 07.), max = 18.7 (05. 07.) °C
+denní průměr: 13.4 – 26.2 °C, nejteplejší den 02. 07., nejchladnější 08. 07.
+průměrný denní chod: minimum v 5:00 (13.4 °C), maximum v 14:00 (20.8 °C)
+
+=== Odchylka od mediánu hodiny dne ===
+medián podle hodiny: 0h=14.8, 1h=14.3, 2h=13.6, 3h=13.6, 4h=13.4, 5h=13.1, 6h=13.5, 7h=14.4, 8h=15.3, 9h=16.5, 10h=17.8, 11h=18.2, 12h=19.1, 13h=20.1, 14h=19.9, 15h=19.5, 16h=19.7, 17h=19.5, 18h=19.1, 19h=18.6, 20h=17.4, 21h=16.8, 22h=16.1, 23h=15.2
+rozpětí typického denního chodu = 6.9 °C
+rozptyl: teplota = 20.23, odchylka = 13.34 (denní chod vysvětluje 34 %)
+odchylka: průměr = 0.820, směr. odchylka = 3.65, min = -7.25 (16. 07. 19:20), max = 14.50 (02. 07. 15:20)
+
+=== Autokorelace ===
+ACF lag   1 ( 0.2 h): teplota = 0.995, odchylka = 0.990
+ACF lag   6 ( 1.0 h): teplota = 0.960, odchylka = 0.957
+ACF lag  36 ( 6.0 h): teplota = 0.438, odchylka = 0.674
+ACF lag  72 (12.0 h): teplota = -0.043, odchylka = 0.436
+ACF lag 144 (24.0 h): teplota = 0.563, odchylka = 0.372
+Ljung-Box (teplota, lag 144): Q = 145232, p = 0.00e+00
+Ljung-Box (odchylka, lag 144): Q = 217843, p = 0.00e+00
+efektivní velikost výběru (AR(1), rho = 0.995): 12 z 4464
+
+=== Test normality ===
+[teplota] Shapiro-Wilk W = 0.9112, p = 2.82e-45; K2 = 815.6, p = 8.01e-178; KS D = 0.1019, p = 8.04e-41; šikmost = 1.19, exces = 1.35
+[odchylka] Shapiro-Wilk W = 0.9158, p = 2.05e-44; K2 = 862.3, p = 5.75e-188; KS D = 0.1146, p = 1.50e-51; šikmost = 1.20, exces = 1.70
+(p-hodnoty předpokládají nezávislá pozorování, viz ACF - jsou jen orientační)
+
+=== Pravidlo 3σ ===
+[teplota] meze = [3.97; 30.96] °C, mimo mez: 74 (1.66 %), pod: 0, nad: 74
+[odchylka] meze = [-10.14; 11.78] °C, mimo mez: 90 (2.02 %), pod: 0, nad: 90
+očekáváno při normalitě: 12.1
+
+=== MAD (modifikované z-skóre) ===
+[teplota] medián = 16.40, MAD = 2.50 (škálovaná = 3.71), meze = [3.43; 29.37] °C, mimo mez: 111 (2.49 %)
+[odchylka] medián = 0.00, MAD = 1.75 (škálovaná = 2.59), meze = [-9.08; 9.08] °C, mimo mez: 181 (4.05 %)
+[Hampel, okno 13 měření = ±60 min] mimo mez: 138 (3.09 %)
+
+=== Krabicový graf (IQR) ===
+[teplota] Q1 = 14.30, Q3 = 19.60, IQR = 5.30, ploty = [6.35; 27.55] °C, mimo: 192 (4.30 %)
+[odchylka] Q1 = -1.46, Q3 = 2.20, IQR = 3.66, ploty = [-6.96; 7.69] °C, mimo: 293 (6.56 %)
+
+=== Kdy pravidla označují (místní hodina) ===
+3σ teplota   :   74 bodů,  2 dní, hodiny 11–20 h, medián 16.0 h
+MAD teplota  :  111 bodů,  3 dní, hodiny 11–21 h, medián 16.0 h
+IQR teplota  :  192 bodů,  4 dní, hodiny 10–21 h, medián 16.0 h
+3σ odchylka  :   90 bodů,  2 dní, hodiny 11–21 h, medián 17.0 h
+MAD odchylka :  181 bodů,  5 dní, hodiny  0–23 h, medián 16.0 h
+IQR odchylka :  293 bodů,  7 dní, hodiny  0–23 h, medián 16.0 h
+Hampel       :  138 bodů, 28 dní, hodiny  0–23 h, medián 12.0 h
+MAD odchylka ∩ Hampel: 10 bodů: 01. 07. 15:20 30.4 °C, 01. 07. 16:40 32.5 °C, 01. 07. 21:50 26.1 °C, 02. 07. 11:00 30.7 °C, 02. 07. 11:10 30.0 °C, 03. 07. 08:40 25.2 °C, 05. 07. 17:00 28.9 °C, 20. 07. 14:50 29.4 °C, 20. 07. 15:10 29.4 °C, 20. 07. 16:20 29.8 °C
+MAD teplota ∩ MAD odchylka: 111 bodů
+[IQR po hodinách] mimo vousy svých hodinových krabic: 269 (6.03 %)
+
+=== ECDF odchylky ===
+největší mezery mezi sousedními hodnotami: -6.80->-6.55 (0.25), 11.05->11.25 (0.20), -7.15->-6.95 (0.20), 10.60->10.80 (0.20), -6.45->-6.30 (0.15)
+kvantil ECDF -5.77 °C
+kvantil ECDF 13.68 °C
+P(d < -4 °C) empiricky = 4.55 %, normálně = 9.35 %
+P(d < -6 °C) empiricky = 0.34 %, normálně = 3.09 %
+P(d < -8 °C) empiricky = 0.00 %, normálně = 0.79 %
+P(d > 4 °C) empiricky = 15.88 %, normálně = 19.20 %
+P(d > 6 °C) empiricky = 9.99 %, normálně = 7.81 %
+P(d > 8 °C) empiricky = 5.69 %, normálně = 2.47 %
+
+=== k-means na odchylce: pravidlo lokte (k = 1–10) ===
+k =  1: WCSS =   59546.6 (100.0 % z k = 1), odstup od spojnice = 0.000
+k =  2: WCSS =   20917.8 ( 35.1 % z k = 1), odstup od spojnice = 0.549
+k =  3: WCSS =   10988.7 ( 18.5 % z k = 1), odstup od spojnice = 0.608
+k =  4: WCSS =    7002.7 ( 11.8 % z k = 1), odstup od spojnice = 0.565
+k =  5: WCSS =    4274.5 (  7.2 % z k = 1), odstup od spojnice = 0.501
+k =  6: WCSS =    3095.8 (  5.2 % z k = 1), odstup od spojnice = 0.410
+k =  7: WCSS =    2121.5 (  3.6 % z k = 1), odstup od spojnice = 0.315
+k =  8: WCSS =    1678.2 (  2.8 % z k = 1), odstup od spojnice = 0.212
+k =  9: WCSS =    1326.7 (  2.2 % z k = 1), odstup od spojnice = 0.107
+k = 10: WCSS =    1064.5 (  1.8 % z k = 1), odstup od spojnice = 0.000
+loket: k = 3
+  shluk 1: [-7.25; 0.20] °C, n = 2433, střed = -1.64 °C, mimo mez MAD: 0, dní = 30, medián hodiny = 11 h
+  shluk 2: [0.25; 5.30] °C, n = 1512, střed = 2.11 °C, mimo mez MAD: 0, dní = 27, medián hodiny = 10 h
+  shluk 3: [5.35; 14.50] °C, n = 519, střed = 8.59 °C, mimo mez MAD: 181, dní = 10, medián hodiny = 14 h
+
+=== DBSCAN na odchylce (min_samples = 10) ===
+koleno k-distance grafu: eps = 0.10 °C (bod 4186 z 4464, P99 k-vzdálenosti = 0.20)
+  eps = 0.1: shluků = 4, šum = 58
+  eps = 0.2: shluků = 2, šum = 13
+  eps = 0.3: shluků = 2, šum = 5
+  eps = 0.4: shluků = 1, šum = 2
+  eps = 0.5: shluků = 1, šum = 2
+  eps = 0.6: shluků = 1, šum = 0
+  eps = 0.7: shluků = 1, šum = 0
+  eps = 0.8: shluků = 1, šum = 0
+  eps = 0.9: shluků = 1, šum = 0
+  eps = 1.0: shluků = 1, šum = 0
+eps = 0.1: šum (58), dny: 01. 07., 02. 07., 08. 07., 09. 07., 12. 07., 16. 07.
+    01. 07. 14:10: +11.00 °C
+    01. 07. 15:10: +11.40 °C
+    01. 07. 15:20: +10.90 °C
+    01. 07. 19:40: +11.65 °C
+    01. 07. 19:50: +11.55 °C
+    01. 07. 20:20: +12.35 °C
+    01. 07. 20:40: +11.45 °C
+    02. 07. 09:50: +10.60 °C
+    02. 07. 10:40: +11.05 °C
+    02. 07. 10:50: +11.25 °C
+    02. 07. 11:40: +13.40 °C
+    02. 07. 11:50: +13.50 °C
+    02. 07. 12:30: +13.15 °C
+    02. 07. 12:40: +12.95 °C
+    02. 07. 12:50: +13.05 °C
+    02. 07. 13:10: +12.95 °C
+    02. 07. 13:30: +13.15 °C
+    02. 07. 13:40: +13.05 °C
+    02. 07. 14:00: +13.20 °C
+    02. 07. 14:30: +13.30 °C
+  shluk 0: n = 4340, rozsah = [-5.80; 10.55] °C
+  shluk 1: n = 29, rozsah = [11.70; 12.30] °C
+  shluk 2: n = 19, rozsah = [12.45; 12.85] °C
+  shluk 3: n = 18, rozsah = [13.80; 14.20] °C
+eps = 0.4: šum (2), dny: 16. 07.
+    16. 07. 19:20: -7.25 °C
+    16. 07. 19:30: -7.15 °C
+  shluk 0: n = 4462, rozsah = [-6.95; 14.50] °C
+
+=== Iterativní odstraňování (odchylka) ===
+3σ iterace 1: odstraněno  90, rozsah zbytku = [-7.25; 11.75] °C, celkem 90 (2.02 %)
+3σ iterace 2: odstraněno  28, rozsah zbytku = [-7.25; 10.20] °C, celkem 118 (2.64 %)
+3σ iterace 3: odstraněno  15, rozsah zbytku = [-7.25; 9.90] °C, celkem 133 (2.98 %)
+3σ iterace 4: odstraněno  12, rozsah zbytku = [-7.25; 9.70] °C, celkem 145 (3.25 %)
+3σ iterace 5: odstraněno   5, rozsah zbytku = [-7.25; 9.60] °C, celkem 150 (3.36 %)
+3σ iterace 6: odstraněno   3, rozsah zbytku = [-7.25; 9.55] °C, celkem 153 (3.43 %)
+3σ iterace 7: odstraněno   3, rozsah zbytku = [-7.25; 9.50] °C, celkem 156 (3.49 %)
+3σ: odstraněné hodnoty pocházejí z 4 dní
+MAD iterace 1: odstraněno 181, rozsah zbytku = [-7.25; 9.05] °C, celkem 181 (4.05 %)
+MAD iterace 2: odstraněno  46, rozsah zbytku = [-7.25; 8.40] °C, celkem 227 (5.09 %)
+MAD iterace 3: odstraněno  11, rozsah zbytku = [-7.25; 8.20] °C, celkem 238 (5.33 %)
+MAD: odstraněné hodnoty pocházejí z 6 dní
+DBSCAN iterace 1: odstraněno   2, rozsah zbytku = [-6.95; 14.50] °C, celkem 2 (0.04 %)
+DBSCAN: odstraněné hodnoty pocházejí z 1 dní
+
+=== Změny mezi sousedními měřeními ===
+největší změny: 15. 07. 14:30: 22.5 -> 14.7 (-7.8), 16. 07. 19:10: 17.9 -> 12.1 (-5.8), 03. 07. 00:50: 24.4 -> 21.2 (-3.2), 27. 07. 14:50: 23.1 -> 20.3 (-2.8), 07. 07. 17:30: 19.5 -> 16.9 (-2.6), 10. 07. 13:10: 18.5 -> 20.8 (+2.3)
+změna za 10 min: průměr = -0.000, směr. odchylka = 0.46 °C, |změna| > 3 °C: 3, mimo 3σ změn: 74
+po poklesu 15. 07. 14:30: následující hodina 14.7 – 16.8 °C (pokles přetrvává, nejde o ojedinělý bod)
+po poklesu 16. 07. 19:10: následující hodina 11.4 – 12.3 °C (pokles přetrvává, nejde o ojedinělý bod)
+
+Grafy uloženy do /home/patrik/Diplomka/ai_training_tool_vibecoded/analysis/time-series/output/figures, data do /home/patrik/Diplomka/ai_training_tool_vibecoded/analysis/time-series/output/temperature_time_series.csv

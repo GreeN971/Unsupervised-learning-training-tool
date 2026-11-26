@@ -1,7 +1,7 @@
-import json
 import threading
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 from nicegui import run as nicegui_run
 from nicegui import ui
@@ -9,28 +9,21 @@ from nicegui import ui
 from app import theme
 from app.pages.topology import topology_params
 from app.state import STATE
+from core import model_paths
 from core.common import TrainingCancelled
 from core.registry import REGISTRY
 
 
-_QUANTIZATION_NAMES = {"none": "float32", "int8": "int8"}
+def _result(title: str, value: str) -> None:
+    """One prominent line of the finished run: a small title and its value."""
+    with ui.element("div").classes("neu-result"):
+        ui.label(title).classes("neu-notices-title")
+        ui.label(value).classes("neu-result-value")
 
 
-def _quantization_report(output_path: Path) -> str | None:
-    """One-line summary of the "quantization" section the converter writes
-    to <name>_params.json next to the .tflite, or None if it's missing.
-    """
-    params_path = output_path.with_name(f"{output_path.stem}_params.json")
-    try:
-        q = json.loads(params_path.read_text())["quantization"]
-    except (OSError, ValueError, KeyError):
-        return None
-    return (
-        f"{_QUANTIZATION_NAMES.get(q['type'], q['type'])}, {q['size_bytes']} B - "
-        f"test error vs. unquantized: mean {q['test_mean_abs_error']:.4f}, "
-        f"max {q['test_max_abs_error']:.4f}; anomaly flags agree on "
-        f"{q['test_flag_agreement'] * 100:.1f}% of test samples"
-    )
+def _size_text(path: Path) -> str:
+    size = path.stat().st_size
+    return f"{size / 1024:.2f} KiB ({size} B)"
 
 
 def build(key: str) -> None:
@@ -58,6 +51,7 @@ def build(key: str) -> None:
             "done": False,
             "error": None,
             "cancelled": False,
+            "list_warning": None,
         }
         cancel_event = threading.Event()
         start_time = time.monotonic()
@@ -84,11 +78,15 @@ def build(key: str) -> None:
             "Interrupt", on_click=request_cancel, color=None
         ).classes("neu-danger q-mt-md")
 
+        def train() -> None:
+            entry.run(params, output_path, progress_callback, cancel_event)
+            # Only reached when the model was written. Done here, not in
+            # tick(), so it's remembered even if the page has been left.
+            status["list_warning"] = model_paths.remember(output_path)
+
         async def start_training() -> None:
             try:
-                await nicegui_run.io_bound(
-                    entry.run, params, output_path, progress_callback, cancel_event
-                )
+                await nicegui_run.io_bound(train)
             except TrainingCancelled:
                 status["cancelled"] = True
             except Exception as exc:  # surfaced to the user, not swallowed
@@ -117,14 +115,22 @@ def build(key: str) -> None:
                         "Back to start", on_click=lambda: ui.navigate.to("/"), color=None
                     ).classes("neu-primary")
                 else:
-                    status_label.text = f"Saved to {output_path}"
-                    status_label.classes(add="neu-ok")
-                    report = _quantization_report(output_path)
-                    if report:
-                        ui.label(report).classes("neu-status")
-                    ui.button(
-                        "Back to start", on_click=lambda: ui.navigate.to("/"), color=None
-                    ).classes("neu-primary")
+                    status_label.set_visibility(False)
+                    _result("Saved to", str(output_path))
+                    _result("Size of the .tflite file", _size_text(output_path))
+                    if status["list_warning"]:
+                        ui.label(status["list_warning"]).classes("neu-status neu-error")
+                    with ui.row().classes("gap-4 justify-center"):
+                        ui.button(
+                            "Back to start", on_click=lambda: ui.navigate.to("/"), color=None
+                        ).classes("neu-primary")
+                        # Names the model, so this one opens even if the list
+                        # of saved models couldn't be written.
+                        ui.button(
+                            "Test a trained model", color=None,
+                            on_click=lambda: ui.navigate.to(
+                                f"/test?model={quote(str(output_path), safe='')}"),
+                        ).classes("neu-primary")
 
         ticker = ui.timer(0.5, tick)
         ui.timer(0.05, start_training, once=True)

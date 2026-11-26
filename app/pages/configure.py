@@ -1,6 +1,7 @@
 from nicegui import ui
 
 from app import theme
+from app.pages import notices
 from app.state import STATE
 from core.registry import REGISTRY
 
@@ -61,6 +62,9 @@ def _param_field(p, values: dict):
         field = ui.select(
             p.choices, label=p.label, value=values[p.key],
         ).classes("w-64").props("outlined")
+        if len(p.choices) == 1:
+            # Nothing to choose: shown as usual, but the menu doesn't open.
+            field.props("readonly")
     else:  # pragma: no cover - registry-defined types only
         return None
 
@@ -76,17 +80,15 @@ def _param_field(p, values: dict):
     return field
 
 
-def _dependent_field(p, parent, values: dict) -> None:
-    """``p`` beside the row of its ``parent`` input, outside the row's width so
-    the parent stays aligned with the other params. Enabled only while the
-    parent has the value in ``p.enabled_when``.
-    """
-    parent_key, enabling_value = p.enabled_when
-    with ui.row().classes("absolute left-full ml-2 items-center gap-2 no-wrap"):
-        field = _param_field(p, values)
-    field.classes("w-36")  # wraps a long label to fit the panel
-    field.set_enabled(values[parent_key] == enabling_value)
-    parent.on_value_change(lambda e: field.set_enabled(e.value == enabling_value))
+def _section(title: str, params: list, values: dict, on_change) -> None:
+    """A titled group of ``params``."""
+    ui.label(title).classes("neu-section-title")
+    with ui.column().classes("gap-3 w-full items-center"):
+        for p in params:
+            with ui.row().classes("items-center gap-2"):
+                field = _param_field(p, values)
+                if field is not None:
+                    field.on_value_change(on_change)
 
 
 def build(key: str) -> None:
@@ -95,22 +97,34 @@ def build(key: str) -> None:
     values = {p.key: STATE["params"].get(p.key, p.default) for p in entry.params}
     STATE["params"] = values
 
+    @ui.refreshable
+    def notices_view() -> None:
+        notices.render(entry, values)
+
     def go_next() -> None:
         STATE["params"] = values
+        blocking = notices.first_blocking(entry.notices(values))
+        if blocking:
+            ui.notify(blocking, type="warning", multi_line=True)
+            return
         ui.navigate.to(f"/topology/{key}")
 
-    with theme.panel(2, wide=True):  # room for the fields beside Quantization
+    with theme.panel(2):
         ui.label(f"Configure {entry.display_name}").classes("text-h5")
 
-        with ui.column().classes("gap-3 w-full max-w-md items-center"):
-            for p in entry.params:
-                if p.enabled_when:
-                    continue  # drawn in the row of the param it depends on
-                with ui.row().classes("items-center gap-2 relative"):
-                    field = _param_field(p, values)
-                    for dependent in entry.params:
-                        if dependent.enabled_when and dependent.enabled_when[0] == p.key:
-                            _dependent_field(dependent, field, values)
+        # Re-checked on every param change (see the fields below).
+        with ui.column().classes("w-full max-w-lg"):
+            notices_view()
+
+        def refresh_notices(_) -> None:
+            notices_view.refresh()
+
+        with ui.column().classes("gap-3 w-full max-w-md"):
+            _section(f"PyOD detector · {entry.display_name}",
+                     entry.detector_params(), values, refresh_notices)
+            ui.element("div").classes("h-3")  # breathing room between sections
+            _section("Keras surrogate network",
+                     entry.surrogate_params(), values, refresh_notices)
 
         with ui.row().classes("q-mt-md gap-2"):
             ui.button("Back", on_click=lambda: ui.navigate.to("/algorithm"), color=None).classes("neu-ghost")

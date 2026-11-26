@@ -71,9 +71,6 @@ def parse_layers(text: str) -> list[int]:
 
 # float32 constants.
 FLOAT32_PARAM_BYTES = 4  # F: weights and biases are both 32-bit floats
-# F when these float32 formulas estimate an int8 model (Calibrated size
-# calculation off): a simple approximation, see the int8 constants below.
-UNCALIBRATED_INT8_PARAM_BYTES = 1
 FLOAT32_LAYER_OVERHEAD = 450  # Clayer per Dense layer
 FLOAT32_FIXED_OVERHEAD = 650  # Cfixed
 # Cadd per ADD op (a residual skip; its ReLU is fused into the ADD, so no
@@ -123,11 +120,9 @@ def _residual_dense_layers(n_blocks: int, block_depth: int) -> int:
     return n_blocks * block_depth + 2
 
 
-def estimate_mlp_float32_bytes(layers: list[int],
-                               param_bytes: int = FLOAT32_PARAM_BYTES) -> int:
+def estimate_mlp_float32_bytes(layers: list[int]) -> int:
     """Estimated float32 MLP size, for hidden widths ``layers`` plus the
-    Dense(1) output: F * (weights + biases) + dense_layers * Clayer + Cfixed,
-    where F = ``param_bytes``.
+    Dense(1) output: F * (weights + biases) + dense_layers * Clayer + Cfixed.
 
     E.g. [32, 16, 8]: weights 32*16 + 16*8 + 8*1, biases 32 + 16 + 8 + 1,
     dense_layers 4.
@@ -137,7 +132,7 @@ def estimate_mlp_float32_bytes(layers: list[int],
     biases = sum(widths)
     dense_layers = len(widths)  # hidden layers + the Dense(1) output
     return (
-        param_bytes * (weights + biases)
+        FLOAT32_PARAM_BYTES * (weights + biases)
         + dense_layers * FLOAT32_LAYER_OVERHEAD
         + FLOAT32_FIXED_OVERHEAD
     )
@@ -164,18 +159,17 @@ def estimate_mlp_int8_bytes(layers: list[int], n_features: int) -> int:
 
 
 def estimate_residual_float32_bytes(width: int, n_blocks: int, block_depth: int,
-                                    expansion_factor: float, n_features: int,
-                                    param_bytes: int = FLOAT32_PARAM_BYTES) -> int:
+                                    expansion_factor: float, n_features: int) -> int:
     """Estimated float32 residual MLP size:
     F * (weights + biases) + dense_layers * Clayer + adds * Cadd + Cfixed,
-    where F = ``param_bytes``, dense_layers = B*D + 2 and adds = B.
+    where dense_layers = B*D + 2 and adds = B.
     """
     weights, biases = _residual_parameters(
         width, n_blocks, block_depth, expansion_factor, n_features
     )
     dense_layers = _residual_dense_layers(n_blocks, block_depth)
     return (
-        param_bytes * (weights + biases)
+        FLOAT32_PARAM_BYTES * (weights + biases)
         + dense_layers * FLOAT32_LAYER_OVERHEAD
         + n_blocks * FLOAT32_ADD_OVERHEAD
         + FLOAT32_FIXED_OVERHEAD
@@ -201,33 +195,29 @@ def estimate_residual_int8_bytes(width: int, n_blocks: int, block_depth: int,
     )
 
 
-def size_estimate_text(topology: dict, quantization: str, calibrated: bool,
-                       n_features: int) -> str:
+def size_estimate_text(topology: dict, quantization: str, n_features: int) -> str:
     """The size label's text, for Sequential MLP and Functional Residual, as
-    the float32 or int8 model the QUANTIZATION config value will produce. For
-    int8, ``calibrated`` picks the int8 formulas over the float32 ones.
+    the float32 or int8 model the QUANTIZATION config value will produce.
     """
+    if n_features is None:  # nothing staged yet
+        return "Size estimation in KiB: -"
     architecture = topology["architecture"][topology["type"]]
     is_int8 = quantization == "int8"
-    use_int8_formula = is_int8 and calibrated
-    param_bytes = UNCALIBRATED_INT8_PARAM_BYTES if is_int8 else FLOAT32_PARAM_BYTES
     try:
         if architecture == "residual":
             settings = residual_settings(topology["residual"])
-            if use_int8_formula:
+            if is_int8:
                 size = estimate_residual_int8_bytes(**settings, n_features=n_features)
             else:
-                size = estimate_residual_float32_bytes(
-                    **settings, n_features=n_features, param_bytes=param_bytes
-                )
+                size = estimate_residual_float32_bytes(**settings, n_features=n_features)
         else:
             layers = parse_layers(topology["layers"][architecture])
             if not layers:
                 return "Size estimation in KiB: -"
-            if use_int8_formula:
+            if is_int8:
                 size = estimate_mlp_int8_bytes(layers, n_features)
             else:
-                size = estimate_mlp_float32_bytes(layers, param_bytes)
+                size = estimate_mlp_float32_bytes(layers)
     except ValueError:
         return "Size estimation in KiB: -"
     return f"Size estimation in KiB: {size / 1024:.2f}"
@@ -291,6 +281,8 @@ def mac_residual(width: int, n_blocks: int, block_depth: int,
 
 def mac_text(topology: dict, n_features: int) -> str:
     """The MAC label's text, for Sequential MLP and Functional Residual."""
+    if n_features is None:  # nothing staged yet
+        return "MAC: -"
     architecture = topology["architecture"][topology["type"]]
     try:
         if architecture == "residual":
@@ -328,12 +320,13 @@ def topology_params(topology: dict) -> dict:
 def build(key: str) -> None:
     entry = REGISTRY[key]
     topology = STATE["topology"]
+    # Inputs of the network for the columns the CSV wizard staged.
+    n_features = entry.n_inputs()
     # Chosen on the previous (Configure) page, so it can't change while here.
     quantization = STATE["params"].get("QUANTIZATION", "int8")
-    calibrated = STATE["params"].get("CALIBRATED_SIZE", True)
 
     def size_text() -> str:
-        return size_estimate_text(topology, quantization, calibrated, entry.n_features)
+        return size_estimate_text(topology, quantization, n_features)
 
     @ui.refreshable
     def type_params() -> None:
@@ -370,7 +363,7 @@ def build(key: str) -> None:
 
     def update_estimates() -> None:
         size_label.set_text(size_text())
-        mac_label.set_text(mac_text(topology, entry.n_features))
+        mac_label.set_text(mac_text(topology, n_features))
 
     def on_layers_change(architecture: str, value: str) -> None:
         topology["layers"][architecture] = value
@@ -410,7 +403,7 @@ def build(key: str) -> None:
         )
         # The MAC count mirrors it on the left.
         with ui.row().classes("absolute bottom-3 left-5 items-center gap-1"):
-            mac_label = ui.label(mac_text(topology, entry.n_features)).classes("font-bold")
+            mac_label = ui.label(mac_text(topology, n_features)).classes("font-bold")
             with ui.icon("info").classes("neu-info"):
                 ui.tooltip(MAC_DISCLAIMER).classes("max-w-xs")
         ui.label(f"Topology for {entry.display_name}").classes("text-h5")

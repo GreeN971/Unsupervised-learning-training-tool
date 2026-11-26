@@ -45,6 +45,7 @@ _STYLE = """
   --ng-accent-soft:#3fe0e81f;
   --ng-accent-2:#9c8dff;
   --ng-danger:#ff7a8a;
+  --ng-warning:#f5c26b;
   --ng-success:#4fe0a8;
   --ng-border-glow:#3fe0e855;
   --ng-font-display:'Chakra Petch',ui-sans-serif,sans-serif;
@@ -65,6 +66,7 @@ _STYLE = """
   --ng-accent-soft:#0c8fa31f;
   --ng-accent-2:#5b4fd6;
   --ng-danger:#c8404f;
+  --ng-warning:#8f5400;
   --ng-success:#188a63;
   --ng-border-glow:#0c8fa355;
 }
@@ -296,6 +298,19 @@ input[type=number]{-moz-appearance:textfield;}
 .neu-status.neu-ok{color:var(--ng-success) !important;}
 .neu-status.neu-error{color:var(--ng-danger) !important;}
 
+/* What a finished run shows: the saved path and the model's size. The path
+   wraps anywhere, so all of it can be read. */
+.neu-result{
+  width:100%;background:var(--ng-surface);border-radius:14px;
+  border-left:4px solid var(--ng-success);
+  padding:.9rem 1.1rem;
+  box-shadow:inset 4px 4px 9px var(--ng-shadow-dark), inset -4px -4px 9px var(--ng-shadow-light);
+}
+.neu-result-value{
+  font-family:var(--ng-font-mono) !important;font-size:22px;font-weight:600;line-height:1.4;
+  color:var(--ng-success) !important;overflow-wrap:anywhere;user-select:text;
+}
+
 .neu-path{
   width:100%;
   font-family:var(--ng-font-mono) !important;font-size:12.5px;
@@ -307,6 +322,52 @@ input[type=number]{-moz-appearance:textfield;}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .neu-path.neu-set{color:var(--ng-accent);}
+
+/* Algorithm notices (app/pages/notices.py): blocking problems, warnings and
+   the algorithm's standing limitations, as inset rows with a colored icon
+   and left edge. */
+.neu-notices{width:100%;display:flex;flex-direction:column;gap:.5rem;}
+.neu-notices-title{
+  font-family:var(--ng-font-display) !important;font-size:12px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ng-text-muted) !important;
+  margin-top:.25rem;
+}
+/* Configure page: titles over the PyOD detector and Keras surrogate groups,
+   with an etched rule underneath. */
+.neu-section-title{
+  width:100%;
+  font-family:var(--ng-font-display) !important;font-size:12px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ng-text-muted) !important;
+  padding-bottom:.35rem;margin-bottom:.25rem;
+  border-bottom:1px solid var(--ng-shadow-dark);
+  box-shadow:0 1px 0 var(--ng-shadow-light);
+}
+.neu-notice{
+  display:flex;align-items:flex-start;gap:.6rem;width:100%;
+  font-size:13px;line-height:1.45;color:var(--ng-text-secondary) !important;
+  background:var(--ng-surface);border-radius:12px;
+  border-left:3px solid var(--ng-text-muted);
+  padding:.6rem .85rem;
+  box-shadow:inset 3px 3px 7px var(--ng-shadow-dark), inset -3px -3px 7px var(--ng-shadow-light);
+}
+.neu-notice .q-icon{flex:none;font-size:18px;margin-top:1px;color:var(--ng-text-muted);}
+.neu-notice.neu-notice-block{border-left-color:var(--ng-danger);color:var(--ng-text-primary) !important;}
+.neu-notice.neu-notice-block .q-icon{color:var(--ng-danger);}
+.neu-notice.neu-notice-warn{border-left-color:var(--ng-warning);}
+.neu-notice.neu-notice-warn .q-icon{color:var(--ng-warning);}
+.neu-notice.neu-notice-info .q-icon{color:var(--ng-accent);}
+
+/* CSV wizard sub-tabs and its column include list. */
+.neu-tabs .q-tab{color:var(--ng-text-secondary) !important;border-radius:10px;}
+.neu-tabs .q-tab--active{color:var(--ng-accent) !important;}
+.neu-tabs .q-tab__indicator{background:var(--ng-accent) !important;}
+.neu-tab-panels,.neu-tab-panels .q-tab-panel{background:transparent !important;padding:0 !important;}
+.neu-columns{
+  width:100%;max-height:320px;overflow-y:auto;
+  border-radius:12px;padding:.5rem 1rem;
+  box-shadow:inset 4px 4px 9px var(--ng-shadow-dark), inset -4px -4px 9px var(--ng-shadow-light);
+}
+.neu-column-name{font-family:var(--ng-font-mono) !important;color:var(--ng-text-primary);}
 
 .neu-theme-toggle{
   position:fixed;top:20px;right:20px;z-index:1000;
@@ -568,15 +629,17 @@ def _stepper_html(active: int) -> str:
 
 
 @contextmanager
-def panel(step: int, wide: bool = False) -> Iterator[ui.column]:
+def panel(step: int | None, wide: bool = False) -> Iterator[ui.column]:
     """A centered neumorphic panel, with the wizard stepper above it, that
-    page content is placed inside. `step` is the 0-based active step index;
+    page content is placed inside. `step` is the 0-based active step index,
+    or None for a page outside the steps (the CSV wizard) - no stepper;
     `wide` makes room for fields beside the centered ones.
     """
     with ui.column().classes("w-full neu-viewport items-center justify-center gap-6 py-10"):
         # max-w-3xl: 6 fixed-width (84px) steps plus padding and minimum
         # line widths no longer fit in max-w-xl/2xl.
-        ui.html(_stepper_html(step)).classes("w-full max-w-3xl")
+        if step is not None:
+            ui.html(_stepper_html(step)).classes("w-full max-w-3xl")
         width = "max-w-2xl" if wide else "max-w-xl"
         with ui.column().classes(f"neu-panel items-center gap-4 w-full {width}") as col:
             yield col

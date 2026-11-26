@@ -1,0 +1,183 @@
+{
+  "input_mode": "normalized",
+  "feature_names": [
+    "VALUE",
+    "DELTA"
+  ],
+  "input_layout": [
+    "VALUE",
+    "VALUE_present",
+    "DELTA",
+    "DELTA_present"
+  ],
+  "input_min": [
+    9.3,
+    -3.2
+  ],
+  "input_max": [
+    34.0,
+    2.3
+  ],
+  "valid_input_range": [
+    [
+      -3.049999999999999,
+      46.35
+    ],
+    [
+      -5.95,
+      5.05
+    ]
+  ],
+  "threshold": 0.5,
+  "score_calibration": {
+    "VALUE": {
+      "lo": -0.1425082912331717,
+      "thr": 0.0,
+      "hi": 0.16708434717456577,
+      "top": 0.1918800731575444,
+      "top_score": 1.0742012235205751,
+      "contamination": 0.1
+    },
+    "DELTA": {
+      "lo": -0.18794246974445067,
+      "thr": 0.0,
+      "hi": 0.1848535646411808,
+      "top": 0.21995914248961168,
+      "top_score": 1.094955101127139,
+      "contamination": 0.1
+    },
+    "VALUE+DELTA": {
+      "lo": -0.19012012866259093,
+      "thr": 2.8484870983214866e-17,
+      "hi": 0.12667510090745296,
+      "top": 0.22379702506553079,
+      "top_score": 1.383350490594966,
+      "contamination": 0.1
+    }
+  },
+  "missing_value": 0.0,
+  "min_features_sent": 1,
+  "quantization": {
+    "type": "none",
+    "size_bytes": 16392,
+    "test_mean_abs_error": 3.729740072344612e-08,
+    "test_max_abs_error": 2.682209014892578e-07,
+    "test_flag_agreement": 1.0,
+    "detector_mean_abs_error": 0.013548905029892921,
+    "detector_flag_agreement": 0.9958939902948861,
+    "warnings": [],
+    "patterns": {
+      "VALUE": {
+        "test_mean_abs_error": 2.979397883962065e-08,
+        "test_max_abs_error": 1.1920928955078125e-07,
+        "test_flag_agreement": 1.0,
+        "detector_mean_abs_error": 0.017551353201270103,
+        "detector_flag_agreement": 0.9944008958566629
+      },
+      "DELTA": {
+        "test_mean_abs_error": 3.308124618683905e-08,
+        "test_max_abs_error": 1.1920928955078125e-07,
+        "test_flag_agreement": 1.0,
+        "detector_mean_abs_error": 0.010901376605033875,
+        "detector_flag_agreement": 1.0
+      },
+      "VALUE+DELTA": {
+        "test_mean_abs_error": 4.901697892023549e-08,
+        "test_max_abs_error": 2.682209014892578e-07,
+        "test_flag_agreement": 1.0,
+        "detector_mean_abs_error": 0.012193983420729637,
+        "detector_flag_agreement": 0.9932810750279956
+      }
+    }
+  },
+  "examples": [
+    {
+      "input": [
+        0.23076899349689484,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "expected_score": 0.0205,
+      "anomaly": false,
+      "detector_score": 0.0
+    },
+    {
+      "input": [
+        0.31578901410102844,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "expected_score": 0.0911,
+      "anomaly": false,
+      "detector_score": 0.0592
+    },
+    {
+      "input": [
+        0.4412960112094879,
+        1.0,
+        0.5636360049247742,
+        1.0
+      ],
+      "expected_score": 0.1449,
+      "anomaly": false,
+      "detector_score": 0.1584
+    },
+    {
+      "input": [
+        0.5344129800796509,
+        1.0,
+        0.6181820034980774,
+        1.0
+      ],
+      "expected_score": 0.2809,
+      "anomaly": false,
+      "detector_score": 0.3081
+    },
+    {
+      "input": [
+        0.6680160164833069,
+        1.0,
+        0.6727269887924194,
+        1.0
+      ],
+      "expected_score": 0.5314,
+      "anomaly": true,
+      "detector_score": 0.5017
+    },
+    {
+      "input": [
+        0.0,
+        0.0,
+        0.7636359930038452,
+        1.0
+      ],
+      "expected_score": 0.6547,
+      "anomaly": true,
+      "detector_score": 0.6407
+    },
+    {
+      "input": [
+        0.0,
+        0.0,
+        0.8363639712333679,
+        1.0
+      ],
+      "expected_score": 0.8852,
+      "anomaly": true,
+      "detector_score": 0.894
+    },
+    {
+      "input": [
+        0.0,
+        0.0,
+        0.07272700220346451,
+        1.0
+      ],
+      "expected_score": 1.0906,
+      "anomaly": true,
+      "detector_score": 1.0862
+    }
+  ]
+}

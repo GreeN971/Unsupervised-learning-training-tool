@@ -1,0 +1,38 @@
+Edge Impulse - Bring your own model: iforest.tflite
+============================================================
+
+Model: float32, 16392 bytes, input shape (1, 4), output shape (1, 1).
+
+Upload (Edge Impulse Studio, new project -> upload your model /
+"Bring your own model"; menu names can differ between Studio versions):
+  - Model file: iforest.tflite
+  - Model input: other (raw features, not an image or audio)
+  - Model output: regression (one value: the anomaly score)
+  - Representative features, if asked: iforest_representative.npy
+
+Input - 4 values, in this order:
+   1. VALUE
+   2. VALUE_present
+   3. DELTA
+   4. DELTA_present
+
+Each feature is a value/flag pair: flag 1 = the value was measured,
+and a missing feature is sent as value 0 with flag 0.
+Values must be normalized first: x' = (x - min) / (max - min), with
+  VALUE: min 9.3, max 34
+  DELTA: min -3.2, max 2.3
+Trained for measured values within (outside, the score is not reliable) - before normalization:
+  VALUE: -3.05 .. 46.35
+  DELTA: -5.95 .. 5.05
+
+Output: anomaly score (0 = most normal, can exceed 1); anomalous when score > 0.5.
+
+Check - these inputs should give these scores (+- a few hundredths):
+  [0.230769, 1, 0, 0] -> 0.021 (normal)
+  [0.315789, 1, 0, 0] -> 0.091 (normal)
+  [0.441296, 1, 0.563636, 1] -> 0.145 (normal)
+  [0.534413, 1, 0.618182, 1] -> 0.281 (normal)
+  [0.668016, 1, 0.672727, 1] -> 0.531 (anomaly)
+  [0, 0, 0.763636, 1] -> 0.655 (anomaly)
+  [0, 0, 0.836364, 1] -> 0.885 (anomaly)
+  [0, 0, 0.072727, 1] -> 1.091 (anomaly)

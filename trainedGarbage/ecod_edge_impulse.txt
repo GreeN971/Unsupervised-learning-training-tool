@@ -1,0 +1,34 @@
+Edge Impulse - Bring your own model: ecod.tflite
+============================================================
+
+Model: int8 (full integer), 10096 bytes, input shape (1, 1), output shape (1, 1).
+
+Upload (Edge Impulse Studio, new project -> upload your model /
+"Bring your own model"; menu names can differ between Studio versions):
+  - Model file: ecod.tflite
+  - Model input: other (raw features, not an image or audio)
+  - Model output: regression (one value: the anomaly score)
+  - Representative features, if asked: ecod_representative.npy
+  - The model is already int8-quantized. Send float features; Edge
+    Impulse quantizes them with the model's own input parameters
+    (scale 0.193725, zero point -112) and
+    dequantizes the score (scale 0.0056259, zero point -128).
+
+Input - 1 values, in this order:
+   1. VALUE
+
+Values are raw, as measured - the normalization is built into the model.
+Trained for measured values within (outside, the score is not reliable):
+  VALUE: -3.05 .. 46.35
+
+Output: anomaly score (0 = most normal, can exceed 1); anomalous when score > 0.5.
+
+Check - these inputs should give these scores (+- a few hundredths):
+  [16.5] -> 0.000 (normal)
+  [15.2] -> 0.062 (normal)
+  [20.1] -> 0.169 (normal)
+  [23.1] -> 0.309 (normal)
+  [27.2] -> 0.495 (normal)
+  [11.6] -> 0.580 (anomaly)
+  [33.1] -> 0.951 (anomaly)
+  [34.1] -> 1.356 (anomaly)

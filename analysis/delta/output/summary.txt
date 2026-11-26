@@ -1,0 +1,42 @@
+
+=== Data ===
+n = 4464 (první měření bez DELTA vynecháno)
+VALUE: průměr = 17.47, směr. odchylka = 4.50, min = 9.3, max = 34.1, exces = 1.4
+DELTA: průměr = -0.00, směr. odchylka = 0.46, min = -7.8, max = 2.3, exces = 27.7
+korelace VALUE–DELTA = 0.051
+  extrémní pokles: 15. 07. 14:30 místního času, DELTA = -7.8 °C na 14.7 °C
+  extrémní pokles: 16. 07. 19:10 místního času, DELTA = -5.8 °C na 12.1 °C
+
+=== Kritéria pro k = 1–10 (k-means na standardizovaných VALUE, DELTA) ===
+ k     WCSS  silueta     C-H    D-B    ARI  ARI min   BIC GMM  nejmenší
+ 1   8928.0        –       –      –      –        –     25367      4464
+ 2   5873.6    0.440    2320  1.081  0.962    0.848     22654      1168
+ 3   4366.2    0.443    2331  0.950  0.821    0.571     22425       630
+ 4   3330.4    0.450    2499  0.864  0.905    0.626     22432       456
+ 5   2696.1    0.381    2577  0.846  0.854    0.545     22341       337
+ 6   2356.8    0.378    2486  0.745  0.777    0.491     22278         2
+ 7   2040.0    0.352    2508  0.778  0.772    0.511     22323         2
+ 8   1808.8    0.332    2505  0.799  0.773    0.518     22291         2
+ 9   1621.0    0.330    2510  0.818  0.668    0.503     22328         2
+10   1467.2    0.335    2517  0.796  0.658    0.426     22366         2
+
+=== Doporučení jednotlivých kritérií ===
+loket (WCSS)                 k = 4
+silueta (max)                k = 4
+Calinski–Harabasz (max)      k = 5
+Davies–Bouldin (min)         k = 6 – obsahuje shluk z odlehlých bodů
+stabilita ARI (max, k ≥ 3)   k = 4
+BIC GMM (min)                k = 6 – obsahuje shluk z odlehlých bodů
+od k = 6 vzniká shluk s méně než 20 body (extrémní poklesy teploty), nejde o samostatný režim
+
+=== Doporučený počet shluků: k = 4 ===
+hlasy kritérií: k=4, k=4, k=5, k=6, k=4, k=6
+silueta = 0.450 (max), stabilita ARI = 0.905, loket WCSS: 37 % z k = 1
+
+=== Shluky pro k = 4 (seřazeny podle DELTA) ===
+shluk 1: n =  456 (10.2 %), T =  18.1 °C [9.3; 27.3], DELTA = -0.78 °C [-7.8; -0.3], medián hodiny = 15 h
+shluk 2: n =  712 (15.9 %), T =  24.9 °C [20.0; 34.1], DELTA = -0.04 °C [-1.1; +1.0], medián hodiny = 15 h
+shluk 3: n = 2794 (62.6 %), T =  15.1 °C [10.1; 20.0], DELTA = +0.00 °C [-0.6; +0.7], medián hodiny = 8 h
+shluk 4: n =  502 (11.2 %), T =  19.6 °C [10.8; 31.6], DELTA = +0.76 °C [+0.3; +2.3], medián hodiny = 11 h
+
+Grafy uloženy do /home/patrik/Diplomka/ai_training_tool_vibecoded/analysis/delta/output/figures, přiřazení shluků do /home/patrik/Diplomka/ai_training_tool_vibecoded/analysis/delta/output/clusters.csv

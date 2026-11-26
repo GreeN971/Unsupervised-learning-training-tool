@@ -7,3 +7,9 @@ __pycache__/
 *.py[cod]
 
 INT8_SIZE_ESTIMATION.md
+
+# Temporary CSV slot training reads from (core/temp_csv.py)
+.tmp/
+
+# Where trained models were saved (core/model_paths.py)
+.app_state/

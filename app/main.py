@@ -31,14 +31,22 @@ app.native.start_args["private_mode"] = False
 # registered in the real main process, never in the window-opener child.
 if multiprocessing.current_process().name == "MainProcess":
     from app import theme
-    from app.pages import configure, data, picker, save, topology
+    from app.pages import configure, csv_wizard, data, picker, save, topology
     from app.pages import run as run_page
+    from app.pages import test as test_page
+    from core import temp_csv
 
     theme.install()
+    # Nothing staged in an earlier session is ever trained on by accident.
+    temp_csv.clear()
 
     @ui.page("/")
     def index_page() -> None:
         data.build()
+
+    @ui.page("/csv")
+    def csv_wizard_page() -> None:
+        csv_wizard.build()
 
     @ui.page("/algorithm")
     def algorithm_page() -> None:
@@ -59,6 +67,10 @@ if multiprocessing.current_process().name == "MainProcess":
     @ui.page("/run/{key}")
     def run_page_route(key: str) -> None:
         run_page.build(key)
+
+    @ui.page("/test")
+    def test_page_route(model: str = "") -> None:
+        test_page.build(model)
 
 
 if __name__ in {"__main__", "__mp_main__"}:

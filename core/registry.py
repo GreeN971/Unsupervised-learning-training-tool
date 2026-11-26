@@ -4,9 +4,9 @@ Each entry names the ``core.algorithms`` module that runs it and the
 parameter schema that drives the GUI's config form: label, type, bounds,
 and the tooltip description (English translation of the thesis chapter
 on PyOD parameter descriptions where one exists, otherwise lifted from the
-corresponding ``algorithms/<name>/config.py`` comments).
+corresponding ``core/configs/<name>.py`` comments).
 
-Known simplification: RANDOM_STATE, SCORE_RANGE, LAYERS/HIDDEN_NEURONS and
+Known simplification: RANDOM_STATE, LAYERS/HIDDEN_NEURONS and
 VERBOSE are left as fixed internal defaults rather than exposed as GUI
 params, since list-valued and log-only settings don't fit the current
 scalar param types (int/float/bool/choice). Min/max bounds below are
@@ -16,6 +16,8 @@ usability caps to sanity-check, not hard ML constraints.
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
+from converter.to_tflite import n_model_inputs
+from core import notices, temp_csv
 from core.algorithms import (
     cblof as _cblof,
     cof as _cof,
@@ -45,9 +47,6 @@ class Param:
     choices: Optional[list | dict] = None
     # Shown in bold under the description in the info tooltip.
     warning: Optional[str] = None
-    # (param key, value): shown next to that param, and only enabled while it
-    # has that value.
-    enabled_when: Optional[tuple[str, Any]] = None
 
 
 @dataclass(frozen=True)
@@ -55,8 +54,49 @@ class AlgorithmEntry:
     key: str
     display_name: str
     run: Callable
-    n_features: int  # the model's inputs: len(FEATURES) of the algorithm's config
     params: list = field(default_factory=list)
+    # What the algorithm can't do, whatever the data or settings (shown on
+    # the Configure page).
+    limitations: tuple = ()
+    # checks(params, staged_summary) -> [Notice]: problems with the staged
+    # data and the chosen params; see core.notices.
+    checks: Optional[Callable] = None
+    # Fewest feature columns it can be trained on (core.common.TrainingSpec).
+    min_columns: int = 1
+
+    def default_params(self) -> dict:
+        return {p.key: p.default for p in self.params}
+
+    def detector_params(self) -> list:
+        """The PyOD detector's own params (and the shared test split), in
+        order: everything but the Keras surrogate's.
+        """
+        return [p for p in self.params if p.key not in _SURROGATE_KEYS]
+
+    def surrogate_params(self) -> list:
+        """The Keras surrogate network's params (training and export)."""
+        return [p for p in self.params if p.key in _SURROGATE_KEYS]
+
+    def notices(self, params: Optional[dict] = None) -> list:
+        """Notices for ``params`` (defaults filled in) and the staged CSV:
+        the common checks followed by this algorithm's own (see
+        core.notices). Blocking ones first.
+        """
+        params = {**self.default_params(), **(params or {})}
+        data = temp_csv.staged_summary()
+        found = notices.common_checks(params, data, self.min_columns)
+        if self.checks is not None:
+            found += self.checks(params, data)
+        return sorted(found, key=lambda notice: not notice.blocking)
+
+    def n_inputs(self) -> Optional[int]:
+        """Network inputs for the features it will be trained on: the
+        staged CSV's columns (those the CSV wizard included), as a value
+        each with one column and value/flag pairs with several. None when
+        nothing is staged.
+        """
+        columns = temp_csv.staged_columns()
+        return n_model_inputs(len(columns)) if columns else None
 
 
 _CONTAMINATION = Param(
@@ -64,14 +104,20 @@ _CONTAMINATION = Param(
     "Expected proportion of anomalies (outliers) in the dataset, given as "
     "a fraction in the range (0, 0.5] - e.g. 0.1 means roughly 10% of "
     "samples are expected to be anomalous. PyOD uses it only to set the "
-    "decision threshold; here it also sets the threshold for the "
-    "flag-agreement check in the quantization report [26].",
+    "decision threshold; here the detector's training-score quantile "
+    "1 - contamination is mapped to the exported model's fixed anomaly "
+    "threshold of 0.5 [26].",
     min=0.01, max=0.5,
+    warning="Exactly this share of the training data scores above 0.5. With "
+    "0.1 the 10% least common training values are flagged, even if they are "
+    "ordinary readings (e.g. the warmest days of a month) - lower it to flag "
+    "only real extremes",
 )
 _TEST_SIZE = Param(
     "TEST_SIZE", "Test split fraction", "float", 0.2,
     "Fraction of samples held out to estimate out-of-sample "
-    "(generalization) error.",
+    "(generalization) error. The same split is used to train and evaluate "
+    "the Keras surrogate network.",
     min=0.05, max=0.5,
 )
 _SURROGATE_PARAMS = [
@@ -97,12 +143,7 @@ _SURROGATE_PARAMS = [
         "LOSS", "Loss function", "choice", "mse",
         "Keras loss the surrogate network minimizes while learning to "
         "reproduce the detector's anomaly scores.",
-        choices={
-            "mse": "Mean Squared Error",
-            "binary_crossentropy": "Binary Crossentropy",
-            "categorical_crossentropy": "Categorical Crossentropy",
-        },
-        warning="Not every algorithm is compatible with every loss function",
+        choices={"mse": "Mean Squared Error"},
     ),
     # Not "OPTIMIZER": DeepSVDD already uses that key for its detector's own
     # optimizer, separate from this surrogate network's.
@@ -127,14 +168,24 @@ _SURROGATE_PARAMS = [
         "output; the scale and zero point are saved in <name>_params.json",
     ),
     Param(
-        "CALIBRATED_SIZE", "Calibrated size calculation", "bool", True,
-        "Which formula the Topology page's size estimate uses for an int8 "
-        "model. On: the formula calibrated on int8 models. Off: the float32 "
-        "formula and constants, with 1 byte per parameter. Only the estimate "
-        "changes, not the exported model.",
-        enabled_when=("QUANTIZATION", "int8"),
+        "INPUT_MODE", "Model input", "choice", "raw",
+        "What the exported .tflite takes. Raw: real sensor values - the "
+        "min/max normalization is folded into the first layer's weights "
+        "(same outputs, no extra layers or MAC), so Edge Impulse and the "
+        "device feed measurements directly. Normalized: values scaled to "
+        "[0, 1] with input_min/input_max from <name>_params.json, which the "
+        "device has to compute itself.",
+        choices={
+            "raw": "Raw values",
+            "normalized": "Normalized [0, 1]",
+        },
+        warning="With int8 and several features whose ranges differ a lot, "
+        "raw input loses resolution (one int8 input scale is shared); the "
+        "run report warns when that happens",
     ),
 ]
+# Shown in their own Configure section, apart from the detector's params.
+_SURROGATE_KEYS = frozenset(p.key for p in _SURROGATE_PARAMS)
 
 # Shared by COPOD and ECOD.
 _N_JOBS_DESC = (
@@ -150,7 +201,10 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="iforest",
         display_name="Isolation Forest",
         run=_iforest.run,
-        n_features=len(_iforest._config.FEATURES),
+        limitations=(
+            "Beyond the training range the score stops growing: the trees can't isolate a value any further than the most extreme ones they saw, so a far-out value is flagged only as strongly as those.",
+            'Splits one feature at a time, so it is weak at unusual combinations of features that are each normal on their own.',
+        ),
         params=[
             _CONTAMINATION,
             Param(
@@ -197,7 +251,10 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="cblof",
         display_name="CBLOF",
         run=_cblof.run,
-        n_features=len(_cblof._config.FEATURES),
+        limitations=(
+            "Some combinations of number of clusters, alpha and beta can't split the clusters into large and small ones; training then stops with an error - change one of them.",
+            'The score jumps at cluster boundaries (distance to the nearest large cluster), which the small exported network can only approximate.',
+        ),
         params=[
             _CONTAMINATION,
             Param(
@@ -250,7 +307,11 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="cof",
         display_name="COF",
         run=_cof.run,
-        n_features=len(_cof._config.FEATURES),
+        limitations=(
+            'Local: flags values that are sparse compared with their neighbors, not values that are rare overall - a smoothly thinning tail (e.g. the hottest days) mostly stays normal.',
+            'The compute strategy only changes how the training scores are computed (speed vs. memory); new values are always scored against the training set.',
+        ),
+        checks=notices.cof,
         params=[
             _CONTAMINATION,
             Param(
@@ -287,7 +348,11 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="copod",
         display_name="COPOD",
         run=_copod.run,
-        n_features=len(_copod._config.FEATURES),
+        limitations=(
+            "Scores every feature's tails independently: it flags unusual values of single features, not unusual combinations of individually normal values.",
+            "Picks the tail by each feature's skewness: on a skewed feature the short tail is scored more leniently, so e.g. unusually low values of a right-skewed feature score lower than equally rare high ones.",
+        ),
+        checks=notices.parallel,
         params=[
             _CONTAMINATION,
             Param(
@@ -303,7 +368,10 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="ecod",
         display_name="ECOD",
         run=_ecod.run,
-        n_features=len(_ecod._config.FEATURES),
+        limitations=(
+            "Scores every feature's tails independently: it flags unusual values of single features, not unusual combinations of individually normal values.",
+        ),
+        checks=notices.parallel,
         params=[
             _CONTAMINATION,
             Param(
@@ -319,7 +387,10 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="knn",
         display_name="KNN",
         run=_knn.run,
-        n_features=len(_knn._config.FEATURES),
+        limitations=(
+            'Global distance to the k-th nearest training value: a group of more than k similar anomalies looks normal, so k should exceed the size of such groups.',
+        ),
+        checks=notices.knn,
         params=[
             _CONTAMINATION,
             Param(
@@ -343,7 +414,10 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="loda",
         display_name="LODA",
         run=_loda.run,
-        n_features=len(_loda._config.FEATURES),
+        limitations=(
+            'Values beyond the training range get the density of the outermost histogram bin, so they are flagged no more strongly than the most extreme training values - on the denser side of the data possibly not at all.',
+            'Built from random projections: few random cuts make the score noisy.',
+        ),
         params=[
             _CONTAMINATION,
             Param(
@@ -368,7 +442,11 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="lof",
         display_name="LOF",
         run=_lof.run,
-        n_features=len(_lof._config.FEATURES),
+        limitations=(
+            'Local: flags values that are sparse compared with their neighbors, not values that are rare overall - a smoothly thinning tail (e.g. the hottest days) mostly stays normal.',
+            'On rounded measurements with many repeated values, the number of neighbors should exceed how often a value repeats; otherwise the scores are mostly noise and the exported model agrees less with the detector.',
+        ),
+        checks=notices.lof,
         params=[
             _CONTAMINATION,
             Param(
@@ -386,7 +464,11 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="ocsvm",
         display_name="OCSVM",
         run=_ocsvm.run,
-        n_features=len(_ocsvm._config.FEATURES),
+        limitations=(
+            'Only the RBF kernel encloses the normal data; the linear, polynomial and sigmoid kernels separate a half-space, so values on one side of the data are never flagged.',
+            'Training time grows roughly with the square of the number of rows.',
+        ),
+        checks=notices.ocsvm,
         params=[
             _CONTAMINATION,
             Param(
@@ -424,7 +506,10 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="pca",
         display_name="PCA",
         run=_pca.run,
-        n_features=len(_pca._config.FEATURES),
+        limitations=(
+            'Its strength is correlated features: with a single feature it reduces to a distance from the mean.',
+        ),
+        checks=notices.pca,
         params=[
             _CONTAMINATION,
             Param(
@@ -460,7 +545,12 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="sod",
         display_name="SOD",
         run=_sod.run,
-        n_features=len(_sod._config.FEATURES),
+        limitations=(
+            'Needs at least two feature columns: with one there is no subspace to select and every score is 0. Only feature subsets of two or more columns are trained, so the device must send at least two features.',
+            'A value far from the data can still score 0 when no axis of its reference set has a clearly lower variance than the others.',
+        ),
+        checks=notices.sod,
+        min_columns=_sod.TRAINING.min_pattern_columns,
         params=[
             _CONTAMINATION,
             Param(
@@ -491,7 +581,11 @@ REGISTRY: dict[str, AlgorithmEntry] = {
         key="deepsvdd",
         display_name="DeepSVDD",
         run=_deepsvdd.run,
-        n_features=len(_deepsvdd._config.FEATURES),
+        limitations=(
+            'The autoencoder variant needs at least as many feature columns as the smallest hidden layer has neurons (32).',
+            'Trains one PyTorch network per feature subset, so it is slow with several features.',
+        ),
+        checks=lambda params, data: notices.deepsvdd(params, data, _deepsvdd.DEFAULT_PARAMS["HIDDEN_NEURONS"]),
         params=[
             _CONTAMINATION,
             Param(

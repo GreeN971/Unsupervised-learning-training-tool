@@ -21,6 +21,10 @@ STATE: dict = {
     # Chosen data file from the first (Data) step. Not cleared by reset(),
     # which runs when the Algorithm step loads.
     "data_path": None,
+    # Columns included in the CSV wizard (staged into core.temp_csv) and
+    # the file they were chosen for; likewise kept by reset().
+    "features": None,
+    "features_path": None,
     "algorithm_key": None,
     "params": {},
     "topology": _default_topology(),

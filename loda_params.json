@@ -1,0 +1,114 @@
+{
+  "input_mode": "raw",
+  "feature_names": [
+    "VALUE"
+  ],
+  "input_layout": [
+    "VALUE"
+  ],
+  "input_min": [
+    9.3
+  ],
+  "input_max": [
+    34.0
+  ],
+  "valid_input_range": [
+    [
+      -3.049999999999999,
+      46.35
+    ]
+  ],
+  "threshold": 0.5,
+  "score_calibration": {
+    "VALUE": {
+      "lo": 0.01605382515935373,
+      "thr": 0.027103876516842144,
+      "hi": 0.04275861442773831,
+      "contamination": 0.1
+    }
+  },
+  "quantization": {
+    "type": "int8",
+    "size_bytes": 5160,
+    "test_mean_abs_error": 0.005599188152700663,
+    "test_max_abs_error": 0.08836306631565094,
+    "test_flag_agreement": 0.9955207166853304,
+    "detector_mean_abs_error": 0.026300564408302307,
+    "detector_flag_agreement": 0.9854423292273237,
+    "warnings": [],
+    "input_scale": 0.19372548162937164,
+    "input_zero_point": -112,
+    "output_scale": 0.00391443120315671,
+    "output_zero_point": -128,
+    "input_resolution": {
+      "VALUE": 0.007843136908071726
+    },
+    "fold_max_abs_error": 6.705522537231445e-07
+  },
+  "examples": [
+    {
+      "input": [
+        15.699999809265137
+      ],
+      "expected_score": 0.0,
+      "anomaly": false,
+      "detector_score": 0.0
+    },
+    {
+      "input": [
+        15.699999809265137
+      ],
+      "expected_score": 0.0,
+      "anomaly": false,
+      "detector_score": 0.0
+    },
+    {
+      "input": [
+        21.399999618530273
+      ],
+      "expected_score": 0.3171,
+      "anomaly": false,
+      "detector_score": 0.2346
+    },
+    {
+      "input": [
+        14.199999809265137
+      ],
+      "expected_score": 0.3484,
+      "anomaly": false,
+      "detector_score": 0.3964
+    },
+    {
+      "input": [
+        23.299999237060547
+      ],
+      "expected_score": 0.4854,
+      "anomaly": false,
+      "detector_score": 0.5
+    },
+    {
+      "input": [
+        24.399999618530273
+      ],
+      "expected_score": 0.5833,
+      "anomaly": true,
+      "detector_score": 0.6161
+    },
+    {
+      "input": [
+        31.600000381469727
+      ],
+      "expected_score": 0.9434,
+      "anomaly": true,
+      "detector_score": 1.0
+    },
+    {
+      "input": [
+        32.70000076293945
+      ],
+      "expected_score": 0.9786,
+      "anomaly": true,
+      "detector_score": 1.0
+    }
+  ]
+}
